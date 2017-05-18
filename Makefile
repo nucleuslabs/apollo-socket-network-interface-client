@@ -19,20 +19,22 @@ dist/%.js: src/%.js node_modules .babelrc | $(DISTDIRS)
 $(DISTDIRS):
 	mkdir -p $@
 
+ifneq ("$(wildcard yarn.lock)","")
 node_modules: yarn.lock
-	yarn install --production=false
+	@yarn install --production=false
 	touch node_modules
 
-# fixme: how to not run this twice if yarn.lock is missing?
 yarn.lock: package.json
-	yarn install --production=false
 	touch yarn.lock
+else # yarn.lock does not exist
+node_modules: yarn.lock
+	touch node_modules
 
-clean:
-	rm -rf dist node_modules
+yarn.lock: package.json
+	@yarn install --production=false
+endif
 
 debug:
 	$(info SRCS: $(SRCS))
 	$(info DISTS: $(DISTS))
 	$(info DISTDIRS: $(DISTDIRS))
-
