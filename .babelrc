@@ -1,0 +1,19 @@
+{
+  "ignore": "node_modules",
+  "presets": [
+    [
+      "env",
+      {
+        "targets": {
+          "node": "current"
+        }
+      }
+    ]
+  ],
+  "plugins": [
+    "transform-class-properties",
+    "transform-function-bind",
+    "transform-object-rest-spread",
+    "syntax-dynamic-import"
+  ]
+}
