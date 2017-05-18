@@ -1,9 +1,10 @@
 // TODO: extract to separate project
 import Net from 'net';
-import Chalk from 'chalk';
-import {log} from '../../redspider-utils/src/debug';
 import Msgpack from 'msgpack-lite';
-import {readUInt64BE, writeUInt64BE} from '../../redspider-utils/src/buffer';
+import {readUInt64BE, writeUInt64BE} from './buffer';
+import makeDebug from 'debug';
+import Chalk from 'chalk';
+const debug = makeDebug('asnic');
 
 const fallback = [10, 50, 100, 250, 500, 1000, 2000];
 
@@ -21,7 +22,7 @@ class LocalNetworkInterface {
         };
         this._sock.on('connect', () => {
             this._retry = 0;
-            log(`${Chalk.green('Connected')} to ${Chalk.underline(path)}`);
+            debug(`${Chalk.green('Connected')} to ${Chalk.underline(path)}`);
         });
         this._sock.on('data', packet => {
             // log("Start",queryId,packet.length);
@@ -46,7 +47,7 @@ class LocalNetworkInterface {
                 try {
                     req = Msgpack.decode(buffer);
                 } catch(err) {
-                    log(`${Chalk.red('Msgpack.decode error:')} ${err.message}`);
+                    debug(`${Chalk.red('Msgpack.decode error:')} ${err.message}`);
                     return;
                 }
                 // log('RESOLVING QUERY',queryId,req);
@@ -59,14 +60,14 @@ class LocalNetworkInterface {
             }
         });
         this._sock.on('end', () => {
-            log(`${Chalk.yellow('Lost connection')} to ${Chalk.underline(path)}. Attempting to reconnect...`);
+            debug(`${Chalk.yellow('Lost connection')} to ${Chalk.underline(path)}. Attempting to reconnect...`);
             process.nextTick(connect);
         });
         this._sock.on('error', err => {
             if(err.code === 'ENOENT') {
                 let ms = fallback[this._retry];
                 if(this._retry < fallback.length - 1) ++this._retry;
-                log(`Socket server is ${Chalk.red('unavailable')}. Trying again in ${Chalk.bold(`${ms} ms`)}`);
+                debug(`Socket server is ${Chalk.red('unavailable')}. Trying again in ${Chalk.bold(`${ms} ms`)}`);
                 setTimeout(connect, ms);
             } else {
                 throw err;
@@ -83,7 +84,6 @@ class LocalNetworkInterface {
             this._pending[queryId] = {resolve, reject};
             let pack = Msgpack.encode(request);
             let sendBuffer = Buffer.allocUnsafe(pack.length + 16);
-            log('SENDING QUER',queryId);
             sendBuffer::writeUInt64BE(queryId, 0);
             sendBuffer::writeUInt64BE(pack.length, 8);
             pack.copy(sendBuffer, 16);

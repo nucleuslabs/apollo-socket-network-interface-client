@@ -1,16 +1,20 @@
 {
   "name": "apollo-socket-network-interface-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
-    "dev": "make dev"
+    "prepublishOnly": "make"
   },
-  "main": "server.js",
-  "repository": "https://bitbucket.org/nucleuslabs/apollo-socket-network-interface-client",
+  "main": "dist/LocalNetworkInterface.js",
+  "repository": {
+    "type": "hg",
+    "url": "https://bitbucket.org/nucleuslabs/apollo-socket-network-interface-client"
+  },
   "license": "MIT",
   "dependencies": {
+    "chalk": "^1.1.3",
+    "debug": "^2.6.8",
     "msgpack-lite": "^0.1.26"
   },
-
   "devDependencies": {
     "babel-cli": "^6.24.1",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
@@ -18,7 +22,7 @@
     "babel-plugin-transform-function-bind": "^6.22.0",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-env": "^1.4.0",
-    "babel-register": "^6.24.1",
-    "chalk": "^1.1.3"
-  }
+    "babel-register": "^6.24.1"
+  },
+  "author": "NucleusLabs Information Technologies Inc."
 }
