@@ -13,7 +13,7 @@ DEPS := $(DISTS) node_modules
 
 build: $(DEPS)
 
-dist/%.js: src/%.js node_modules | $(DISTDIRS)
+dist/%.js: src/%.js node_modules .babelrc | $(DISTDIRS)
 	$(NM)/babel $< -o $@
 
 $(DISTDIRS):
@@ -26,7 +26,7 @@ node_modules: yarn.lock
 # fixme: how to not run this twice if yarn.lock is missing?
 yarn.lock: package.json
 	yarn install --production=false
-	touch node_modules
+	touch yarn.lock
 
 clean:
 	rm -rf dist node_modules
