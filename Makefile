@@ -40,5 +40,5 @@ debug:
 	$(info DISTDIRS: $(DISTDIRS))
 
 publish:
-	yarn version
+	npm version patch
 	npm publish
