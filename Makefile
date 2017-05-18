@@ -38,3 +38,7 @@ debug:
 	$(info SRCS: $(SRCS))
 	$(info DISTS: $(DISTS))
 	$(info DISTDIRS: $(DISTDIRS))
+
+publish:
+	yarn version
+	npm publish
