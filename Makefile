@@ -42,3 +42,6 @@ debug:
 publish:
 	npm version patch
 	npm publish
+
+clean:
+	rm -rf node_modules dist yarn.lock
