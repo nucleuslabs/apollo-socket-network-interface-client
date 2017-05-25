@@ -1,68 +1,53 @@
 // TODO: extract to separate project
 import Net from 'net';
 import Msgpack from 'msgpack-lite';
-import {readUInt64BE, writeUInt64BE} from './buffer';
 import makeDebug from 'debug';
-import Chalk from 'chalk';
 const debug = makeDebug('asnic');
+import Chalk from 'chalk';
+import processData from './processData';
 
 const fallback = [10, 50, 100, 250, 500, 1000, 2000];
 
-class LocalNetworkInterface {
+export default class LocalNetworkInterface {
     constructor({path}) {
         this._sock = new Net.Socket();
         this._pending = {};
         this._count = 0;
         this._retry = 0;
 
-        let buffer, queryId, length, offset;
-
         const connect = () => {
             this._sock.connect({path});
         };
+        
         this._sock.on('connect', () => {
             this._retry = 0;
             debug(`${Chalk.green('Connected')} to ${Chalk.underline(path)}`);
         });
-        this._sock.on('data', packet => {
-            // log("Start",queryId,packet.length);
-            if(!queryId) {  // new message
-                if(packet.length < 16) {
-                    throw new Error(`Packet is too small; missing header?`);
-                }
-                queryId = packet::readUInt64BE(0);
-                // log('GOT RESPONSE TO QUERY',queryId);
-                length = packet::readUInt64BE(8);
-                offset = 0;
-                buffer = Buffer.allocUnsafe(length);
-                packet.copy(buffer, offset, 16);
-                offset += packet.length - 16;
-            } else {
-                packet.copy(buffer, offset);
-                offset += packet.length;
+
+        this._sock.on('data', processData((queryId,msgBuf) => {
+            if(!this._pending[queryId]) {
+                debug(`Got response to query ${queryId}, but it's not pending`);
+                return;
             }
-            if(offset >= length) {
-                // log("Finish",queryId,packet.length);
-                let req;
-                try {
-                    req = Msgpack.decode(buffer);
-                } catch(err) {
-                    debug(`${Chalk.red('Msgpack.decode error:')} ${err.message}`);
-                    return;
-                }
-                // log('RESOLVING QUERY',queryId,req);
+            
+            debug(`got response to query ${queryId}, length is ${msgBuf.length}`);
+            
+            try {
+                let req = Msgpack.decode(msgBuf);
                 this._pending[queryId].resolve(req);
+            } catch(err) {
+                debug('Msgpack decode error',err);
+                this._pending[queryId].reject(err);
+            } finally {
                 delete this._pending[queryId];
-                queryId = null;
-                length = null;
-                offset = null;
-                buffer = null; // TODO: fill with remainder of packet
             }
-        });
+        }));
+        
         this._sock.on('end', () => {
             debug(`${Chalk.yellow('Lost connection')} to ${Chalk.underline(path)}. Attempting to reconnect...`);
             process.nextTick(connect);
         });
+        
         this._sock.on('error', err => {
             if(err.code === 'ENOENT') {
                 let ms = fallback[this._retry];
@@ -83,10 +68,11 @@ class LocalNetworkInterface {
             // let payload = Object.assign({}, request, {queryId});
             this._pending[queryId] = {resolve, reject};
             let pack = Msgpack.encode(request);
-            let sendBuffer = Buffer.allocUnsafe(pack.length + 16);
-            sendBuffer::writeUInt64BE(queryId, 0);
-            sendBuffer::writeUInt64BE(pack.length, 8);
-            pack.copy(sendBuffer, 16);
+            let sendBuffer = Buffer.allocUnsafe(pack.length + 12);
+            
+            sendBuffer.writeUIntBE(queryId, 0, 6);
+            sendBuffer.writeUIntBE(pack.length, 6, 6);
+            pack.copy(sendBuffer, 12);
             // log('request', request, pack.length, sendBuffer.length);
             let flushed = this._sock.write(sendBuffer);
             // log('flushed', flushed);
@@ -99,5 +85,3 @@ class LocalNetworkInterface {
         });
     }
 }
-
-export default LocalNetworkInterface;
