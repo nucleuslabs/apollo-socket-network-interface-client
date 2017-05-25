@@ -1,6 +1,6 @@
 {
   "name": "apollo-socket-network-interface-client",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "scripts": {
     "prepublishOnly": "make"
   },

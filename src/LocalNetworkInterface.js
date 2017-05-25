@@ -30,7 +30,7 @@ export default class LocalNetworkInterface {
                 return;
             }
             
-            debug(`got response to query ${queryId}, length is ${msgBuf.length}`);
+            // debug(`got response to query ${queryId}, length is ${msgBuf.length}`);
             
             try {
                 let req = Msgpack.decode(msgBuf);
