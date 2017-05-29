@@ -1,47 +1,41 @@
-NM := node_modules/.bin
-SRCS := $(shell find src -name '*.js')
-DISTS := $(patsubst src/%,dist/%,$(SRCS))
-DISTDIRS := $(sort $(dir $(DISTS)))
-DEPS := $(DISTS) node_modules
+BIN := node_modules/.bin
+SRC_FILES := $(shell find src -name '*.js')
+DIST_FILES := $(patsubst src/%,dist/%,$(SRC_FILES))
+DIST_DIRS := $(sort $(dir $(DIST_FILES)))
 
 # these are not files
-.PHONY: dev build clean debug test
+.PHONY: all clean nuke debug test dev
 
 # disable default suffixes
 .SUFFIXES:
 
 
-build: $(DEPS)
+all: $(DIST_FILES)
 
-dist/%.js: src/%.js node_modules .babelrc | $(DISTDIRS)
-	$(NM)/babel $< -o $@
+dist/%.js: src/%.js yarn.lock .babelrc | $(DIST_DIRS)
+	$(BIN)/babel $< -o $@
 
-$(DISTDIRS):
+$(DIST_DIRS):
 	mkdir -p $@
 
-ifneq ("$(wildcard yarn.lock)","")
-node_modules: yarn.lock
+yarn.lock: node_modules package.json
 	@yarn install --production=false
-	touch node_modules
+	@touch -mr $(shell ls -Atd $? | head -1) $@
 
-yarn.lock: package.json
-	touch yarn.lock
-else # yarn.lock does not exist
-node_modules: yarn.lock
-	touch node_modules
-
-yarn.lock: package.json
-	@yarn install --production=false
-endif
+node_modules:
+	mkdir -p $@
 
 debug:
-	$(info SRCS: $(SRCS))
-	$(info DISTS: $(DISTS))
-	$(info DISTDIRS: $(DISTDIRS))
+	$(info SRC_FILES: $(SRC_FILES))
+	$(info DIST_FILES: $(DIST_FILES))
+	$(info DIST_DIRS: $(DIST_DIRS))
 
 publish:
 	npm version patch
 	npm publish
 
 clean:
-	rm -rf node_modules dist yarn.lock
+	rm -rf node_modules dist
+
+nuke: clean
+	rm -rf yarn.lock
