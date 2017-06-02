@@ -19,7 +19,7 @@ $(DIST_DIRS):
 	mkdir -p $@
 
 yarn.lock: node_modules package.json
-	@yarn install --production=false
+	@yarn install --production=false --check-files
 	@touch -mr $(shell ls -Atd $? | head -1) $@
 
 node_modules:
